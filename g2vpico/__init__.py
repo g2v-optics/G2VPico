@@ -6,4 +6,4 @@
 #                                                                              #
 ################################################################################
 
-from g2vpico.MainClass import G2VPico
+from .MainClass import G2VPico
