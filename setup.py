@@ -8,7 +8,7 @@
 
 import setuptools
 
-version = "1.0.2"
+version = "1.0.3"
 
 setuptools.setup(
     name="G2VPico",

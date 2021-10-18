@@ -97,6 +97,14 @@ class G2VPico():
 
     ### Private Internal Methods    
 
+    def __error_handler(self, error, command):
+        if "Pico ID invalid" in error:
+            raise RuntimeError("Pico ID is invalid")
+        elif "Command type invalid" in error:
+            raise NotImplementedError("Command {c} is not implemented".format(c=command))
+        else:
+            raise Exception("Unknown error occurred: {e}".format(e=error))
+
     def __send_cmd(self, cmd):
 
         try:
@@ -126,8 +134,8 @@ class G2VPico():
             value = response.get('channel_count', None)
 
             if error is not None:
-                raise Exception("error")
-
+                self.__error_handler(error, new_cmd)
+                
             if new_cmd == cmd['cmd']:
                 return value
 
@@ -146,7 +154,7 @@ class G2VPico():
             value = response.get('channel_list', None)
 
             if error is not None:
-                raise Exception("error")
+                self.__error_handler(error, new_cmd)
 
             if new_cmd == cmd['cmd']:
                 int_list = [int(x) for x in value]
@@ -208,7 +216,7 @@ class G2VPico():
             value = response.get('value', None)
 
             if error is not None:
-                raise Exception(error)
+                self.__error_handler(error, new_cmd)
 
             if new_cmd == cmd['cmd']:
                 return value
@@ -268,7 +276,7 @@ class G2VPico():
             result = response.get('result', None)
 
             if error is not None:
-                raise Exception(error)
+                self.__error_handler(error, new_cmd)
 
             if new_cmd == cmd['cmd']:
                 return result
@@ -334,7 +342,7 @@ class G2VPico():
             limit = response.get('limit', None)
 
             if error is not None:
-                raise Exception(error)
+                self.__error_handler(error, new_cmd)
 
             if new_cmd == cmd['cmd']:
                 return limit
@@ -511,7 +519,7 @@ class G2VPico():
             error = response.get('error', None)
 
             if error is not None:
-                raise Exception(error)
+                self.__error_handler(error, new_cmd)
 
             if new_cmd == cmd['cmd']:
                 x_low = response.get('x_low', None)
