@@ -369,13 +369,13 @@ class G2VPico():
 
     def get_spectrum(self):
         '''
-        Get the current spectrum as a JSON string
+        Get the current spectrum as a list of dict itmes
 
         Returns
         -------
-        str
-            A JSON formatted string containing channel and value information
-            forming the current spectrum in the Pico.
+        list
+            A list of dict items channel and value keys forming
+            the current spectrum in the Pico.
         '''
         spectrum_array = []
 
@@ -386,7 +386,7 @@ class G2VPico():
 
             spectrum_array.append(spectrum_dict)
 
-        return json.dumps(spectrum_array)
+        return spectrum_array
 
 
     def set_spectrum(self, channel_list):
@@ -443,58 +443,6 @@ class G2VPico():
                 result_array[channel] = self.set_channel_value(channel=channel, value=value)
 
         return True
-
-
-    # def get_linear_coefficient(self, channel):
-    #     channel = self.__get_channel_check(channel)
-
-    #     cmd = {}
-    #     cmd['command'] = 'api'
-    #     cmd['pico_id'] = self._id
-    #     cmd['cmd'] = 'get_linear_coeff'
-    #     cmd['channel'] = channel
-
-    #     response = self.__send_cmd(cmd)
-
-    #     if response is not None:
-    #         new_cmd = response.get('cmd')
-    #         channel = response.get('channel')
-    #         error = response.get('error', None)
-    #         value = response.get('value', None)
-
-    #         if error is not None:
-    #             raise Exception(error)
-
-    #         if new_cmd == cmd['cmd']:
-    #             return value
-
-    #     return None 
-
-
-    # def get_quadratic_coefficient(self, channel):
-        
-    #     channel = self.__get_channel_check(channel)
-        
-    #     cmd = {}
-    #     cmd['command'] = 'api'
-    #     cmd['pico_id'] = self._id
-    #     cmd['cmd'] = 'get_quadratic_coeff'
-    #     cmd['channel'] = channel
-
-    #     response = self.__send_cmd(cmd)
-
-    #     if response is not None:
-    #         new_cmd = response.get('cmd')
-    #         error = response.get('error', None)
-    #         value = response.get('value', None)
-
-    #         if error is not None:
-    #             raise Exception(error)
-
-    #         if new_cmd == cmd['cmd']:
-    #             return value
-
-    #     return None
 
 
     def get_channel_wavelength_range(self, channel):
