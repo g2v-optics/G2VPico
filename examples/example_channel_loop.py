@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+'''
+
+This example demonstrates how to loop through all channels in a Pico and increment
+the channel value from 0 to the maximum limit of the channel.
+
+
+'''
+
 import time
 from g2vpico import G2VPico
 

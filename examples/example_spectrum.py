@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+'''
+
+This example script shows how to get the current spectrum values of the Pico,
+save the spectrum values into a file called example.json and then load in a
+new spectrum.
+
+
+'''
+
+
 import os
 import time
 import json

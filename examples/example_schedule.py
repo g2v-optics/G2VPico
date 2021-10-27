@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+'''
+
+This example script shows how to set a schedule to turn the Pico on
+or off every 5 seconds.
+
+'''
+
+
 import os
 import time
 import json
