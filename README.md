@@ -148,7 +148,8 @@ Note that the new global intensity will take effect immediately.
 _____
 
 ### set_spectrum(channel_list)
-Load in a spectrum either as a json string or a dictionary
+Load in a spectrum either as a json string or a dictionary.
+Channels are changed individually so operation is not instantaneous.
 ##### ARGS:
 - `channel_list`:
     - `str` - A JSON formatted string contain channels and their corresponding values

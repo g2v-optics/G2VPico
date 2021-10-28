@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 
 '''
-
 This example script shows how to get the current spectrum values of the Pico,
 save the spectrum values into a file called example.json and then load in a
-new spectrum.
-
-
+new test spectrum.
 '''
-
 
 import os
 import time
@@ -36,11 +32,11 @@ def main():
         json.dump(spectrum_data, outfile, indent=4)
         print("Current spectrum saved to example.json")
 
-    ## Open up example AM1.5 spectrum
-    if os.path.isfile("am1.5.json"):
-        print("Loading in am1.5 spectrum")
+    ## Open up example test spectrum
+    if os.path.isfile("test_spectrum.json"):
+        print("Loading in test spectrum")
 
-        with open("am1.5.json", 'r') as infile:
+        with open("test_spectrum.json", 'r') as infile:
             new_spectrum = json.load(infile)
 
     ## Load the spectrum into the Pico

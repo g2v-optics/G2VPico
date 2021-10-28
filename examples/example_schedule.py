@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
 '''
-
 This example script shows how to set a schedule to turn the Pico on
 or off every 5 seconds.
-
 '''
-
 
 import os
 import time
@@ -30,14 +27,14 @@ def main():
 
     pico.turn_off()
 
-    if os.path.isfile("am1.5.json") is False:
-        print("ERROR: Could not fine am1.5.json file")
+    if os.path.isfile("test_spectrum.json") is False:
+        print("ERROR: Could not fine test_spectrum.json file")
         print("Exiting script")
     else:
-        with open("am1.5.json", 'r') as infile:
+        with open("test_spectrum.json", 'r') as infile:
             new_spectrum = json.load(infile)
 
-        print("Setting Pico to use am1.5 spectrum")
+        print("Setting Pico to use test spectrum")
         pico.set_spectrum(new_spectrum)
         
         print("Setting Pico global intensity to 100.0%")
