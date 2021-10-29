@@ -65,6 +65,9 @@ class G2VPico():
         self._channel_count = self.__get_channel_count()
         self._channel_list = self.__get_channel_list()
 
+        if self._channel_count is None or self._channel_list is None:
+            raise Excpetion("Instance can not be initialized")
+
     def __repr__(self):
         return "PICO {m} at {ip}".format(m=self._id, ip=self._ip_address)   
 

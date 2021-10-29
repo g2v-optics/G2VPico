@@ -25,7 +25,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 import setuptools
 
-version = "1.0.6"
+version = "1.0.7"
 
 setuptools.setup(
     name="G2VPico",
