@@ -121,6 +121,8 @@ class G2VPico():
             raise NotImplementedError("Command {c} is not implemented".format(c=command))
         elif "Pico is not Variable" in error:
             raise RuntimeError("Operation not allowed in Fixed Picos")
+        elif "Pico API not enabled" in error:
+            raise RuntimeError("Pico API not enabled")
         else:
             raise Exception("Unknown error occurred: {e}".format(e=error))
 
