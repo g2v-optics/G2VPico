@@ -45,7 +45,7 @@ The number of channels available in the Pico
 - `int`: The number of channels available
 ____
 
-### channel_list:
+### channel_list
 A list of the available channels in the Pico
 ##### RETURNS:
 - `list`: List of channels with type `int`
