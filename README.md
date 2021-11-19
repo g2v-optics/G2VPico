@@ -3,7 +3,7 @@ Python API library for interaction with G2V Optics Pico
 
 ## Installation
 ```bash
-pip install git+ssh://git@github.com/g2v-optics/G2VPico.git@dev
+pip install git+https://git@github.com/g2v-optics/G2VPico.git@main
 ```
 ## Examples
 Example scripts are available in the _examples_ directory.
