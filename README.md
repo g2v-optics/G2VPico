@@ -9,6 +9,14 @@ pip install git+https://git@github.com/g2v-optics/G2VPico.git@main
 Example scripts are available in the _examples_ directory.  
 Please note that the _examples_ directory will not be installed with the setup but can be downloaded through GitHub.
 
+## Required Information Before Starting
+
+The Python API requires two pieces of information in order to create a Pico object: 
+1. IP address of the Pico on the network: Can be found by typing ifconfig in a terminal on the Pico control box, or hovering the mouse over the network connection icon in the top right of the screen.
+     - Example: `192.168.1.70`
+3. Pico ID: Can be found by looking in the bottom-right of any screen on the Pico GUI software, just below the version number. 
+     - Example: `00000000c2ca735f`
+
 ## Simple Demo
 ```python
 from g2vpico import G2VPico
