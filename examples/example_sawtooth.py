@@ -18,7 +18,7 @@ WAVEFORM_PERIOD_SEC     = 5
 WAVEFORM_CYCLES         = 5         # number of cycles to perform
 WAVEFORM_STEPS          = 10        # number of steps per cycle
 
-WAVEFORM_MIN_STEP       = 0.25      # minimum dwell time
+WAVEFORM_MIN_STEP       = 0.25      # minimum dwell time, seconds
 
 WAVEFORM_MIN            = 60        # trough of waveform
 WAVEFORM_MAX            = 90        # peak of waveform
@@ -26,7 +26,7 @@ WAVEFORM_MAX            = 90        # peak of waveform
 def sawtooth(pico):
 	''' function to run a sawtooth output on pico '''
 
-	# calculate size of time step
+	# calculate size of time step in seconds
 	timestep = WAVEFORM_PERIOD_SEC/WAVEFORM_STEPS
 	if timestep < WAVEFORM_MIN_STEP:
 		timestep = WAVEFORM_MIN_STEP
@@ -34,7 +34,8 @@ def sawtooth(pico):
 	# calculate intensity rise per timestep
 	delta_intensity = (WAVEFORM_MAX - WAVEFORM_MIN)/(timestep)
 
-	# turn on pico to start of waveform
+	# turn on pico, set starting intensity
+	pico.turn_on()
 	print("Setting Pico global intensity to WAVEFORM_MIN: {0}".format(str(WAVEFORM_MIN)))
 	pico.set_global_intensity(WAVEFORM_MIN)
 
@@ -44,13 +45,13 @@ def sawtooth(pico):
 		# setup variables to track the loop
 		cycle_count = 0
 		step_count = 0
-		time_next_action = t0 + timestep		# set time to take next action
+		time_next_action = t0 + dt.timedelta(seconds=timestep)		# set time to take next action
 
 		# main loop code to change pico output
 		while True:
 			if (dt.datetime.now() >= time_next_action):
 				# update time for next action
-				time_next_action = time_next_action + timestep
+				time_next_action = time_next_action + dt.timedelta(seconds=timestep)
 
 				if step_count > WAVEFORM_STEPS:
 					cycle_count = cycle_count + 1
