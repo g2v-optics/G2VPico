@@ -32,7 +32,7 @@ def sawtooth(pico):
 		timestep = WAVEFORM_MIN_STEP
 
 	# calculate intensity rise per timestep
-	delta_intensity = (WAVEFORM_MAX - WAVEFORM_MIN)/(timestep)
+	delta_intensity = (WAVEFORM_MAX - WAVEFORM_MIN)/(WAVEFORM_STEPS)
 
 	# turn on pico, set starting intensity
 	pico.turn_on()
@@ -41,9 +41,11 @@ def sawtooth(pico):
 
 	t0 = dt.datetime.now()
 
+	verboseFlag = True
+
 	try:
 		# setup variables to track the loop
-		cycle_count = 0
+		cycle_count = 1
 		step_count = 0
 		time_next_action = t0 + dt.timedelta(seconds=timestep)		# set time to take next action
 
@@ -58,11 +60,14 @@ def sawtooth(pico):
 					if cycle_count > WAVEFORM_CYCLES:
 						break
 					step_count = 0
-					pico.set_global_intensity(WAVEFORM_MIN)
 				else:
 					step_count = step_count + 1
-					next_intensity = float(WAVEFORM_MIN + step_count*delta_intensity)
-					pico.set_global_intensity(next_intensity)
+
+				next_intensity = WAVEFORM_MIN + step_count*delta_intensity
+				pico.set_global_intensity(next_intensity)
+
+				if verboseFlag:
+					print("Time: {0} Cycle: {1} Step: {2} Next Intensity {3}".format(str(dt.datetime.now()), int(cycle_count), int(step_count), float(next_intensity)))
 
 	except KeyboardInterrupt:
 		print("Exiting script")
