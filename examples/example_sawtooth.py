@@ -7,25 +7,16 @@ sawtooth output
 
 import datetime as dt
 import json
-import sys
+import warnings
 import os
 
 from g2vpico import G2VPico
 
 PICO_ID 				= "00000000c2ca735f"
-
 PICO_IP_ADDRESS 		= "192.168.1.69"
 
-class ParameterError(Exception):
-	''' Exception for parameter errors in the pico function '''
-
-	def __init__(self, message):
-		self.message = message
-		super().__init__(self.message)
-
-	def __str__(self):
-		return f"ParameterError: {self.message}"
-
+class TimestepWarning(UserWarning):
+	pass
 
 class SawtoothWaveform():
 	''' class to run a sawtooth on a pico '''
@@ -39,12 +30,14 @@ class SawtoothWaveform():
 		self._steps = None
 		self._peak = None
 		self._trough = None
-		self._verboseFlag = False
 
 		self._timestep = None
 		self._intensitystep = None
 
-		self.use_hardware = True
+		self.verboseFlag = False
+
+		self.cycle_count = 1
+		self.step_count = 0
 
 		self.pico = picoobj
 		
@@ -54,8 +47,11 @@ class SawtoothWaveform():
 
 	@period.setter
 	def period(self, value):
-		if not isinstance(value, float):
-			raise ValueError("Period must be a float.")
+		try:
+			value = float(value)
+		except (ValueError, TypeError) as e:
+			raise ValueError("Peak must be a numerical value.") from e
+
 		if value <= 0:
 			raise ValueError("Period must be greater than zero.")
 		self._period = value
@@ -90,8 +86,11 @@ class SawtoothWaveform():
 
 	@peak.setter
 	def peak(self, value):
-		if not isinstance(value, float):
-			raise ValueError("Peak must be a float.")
+		try:
+			value = float(value)
+		except (ValueError, TypeError) as e:
+			raise ValueError("Peak must be a numerical value.") from e
+
 		if value < 0 or value > 100:
 			raise ValueError("Peak must be between 0 and 100.")
 		if self._trough is not None and value <= self._trough:
@@ -104,8 +103,11 @@ class SawtoothWaveform():
 
 	@trough.setter
 	def trough(self, value):
-		if not isinstance(value, float):
-			raise ValueError("Trough must be a float.")
+		try:
+			value = float(value)
+		except (ValueError, TypeError) as e:
+			raise ValueError("Peak must be a numerical value.") from e
+
 		if value < 0 or value > 100:
 			raise ValueError("Trough must be between 0 and 100.")
 		if self._peak is not None and value >= self._peak:
@@ -121,7 +123,7 @@ class SawtoothWaveform():
 		self._timestep = max(timestep, self._waveform_minimum_step)
 
 		if self._timestep == self._waveform_minimum_step:
-			sys.stdout.write("Warning: The minimum waveform step is being used as the timestep.\n")
+			warnings.warn("The minimum waveform step is being used as the timestep.", TimestepWarning)
 
 	def calculate_intensitystep(self):
 		if self._steps is None or self._peak is None or self._trough is None:
@@ -138,37 +140,35 @@ class SawtoothWaveform():
 		self.calculate_timestep()
 		self.calculate_intensitystep()
 
-		if self.use_hardware:
-			self.pico.turn_on()
+		
+		self.pico.turn_on()
+		self.pico.set_global_intensity(self._trough)
+		if self.verboseFlag: 
 			print(f"Setting Pico global intensity to {self._trough}")
-			self.pico.set_global_intensity(self._trough)
-		else:
-			print(f"Setting Virtual Pico global intensity to {self._trough}")
-
+		
 		t0 = dt.datetime.now()
 
 		try:
-			cycle_count = 1
-			step_count = 0
+			
 			time_next_action = t0 + dt.timedelta(seconds=self._timestep)
 
 			while True:
 				if dt.datetime.now() >= time_next_action:
 					time_next_action = time_next_action + dt.timedelta(seconds=self._timestep)
 
-					if step_count > self._steps:
-						cycle_count = cycle_count + 1
-						if cycle_count > self._cycles:
+					if self.step_count > self._steps:
+						self.cycle_count += 1
+						if self.cycle_count > self._cycles:
 							break
-						step_count = 0
+						self.step_count = 0
 					else:
-						step_count = step_count + 1
+						self.step_count += 1
 
-					next_intensity = self._trough + step_count * self._intensitystep
+					next_intensity = self._trough + self.step_count * self._intensitystep
+
 					self.pico.set_global_intensity(next_intensity)
-
-					if self._verboseFlag:
-						print(f"Time: {dt.datetime.now()} Cycle: {cycle_count} Step: {step_count} Next Intensity: {next_intensity}")
+					if self.verboseFlag:
+						print(f"Time: {dt.datetime.now()} Cycle: {self.cycle_count} Step: {self.step_count} Next Intensity: {next_intensity}")
 
 		except KeyboardInterrupt:
 			print("Exiting script")
