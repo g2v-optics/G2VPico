@@ -191,6 +191,7 @@ if __name__=="__main__":
 	# create a pico object, make sure it is turned off
 	pico = G2VPico(PICO_IP_ADDRESS, PICO_ID)
 	pico.turn_off()
+	pico.clear_channels()
 
 	if os.path.isfile("test_spectrum.json") is False:
 		print("ERROR: Could not fine test_spectrum.json file")

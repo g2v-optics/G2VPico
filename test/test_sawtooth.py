@@ -329,6 +329,32 @@ class TestSawtooth(unittest.TestCase):
 			if len(actions[index]) > 2:
 				self.assertEqual(actions[index][2], expected_actions[index][2])
 
+	def test_square_wave(self):
+		self.generator.trough = 10	
+		self.generator.peak = 90
+		self.generator.steps = 1
+		self.generator.period = 5
+		self.generator.cycles = 5
+		 
+		# expected behaviours based on above parameters
+		expected_step_time = 5
+		expected_cycle_time = 5
+		expected_intensity_step = 80
+
+		# get logged actions from mockpico
+		self.generator.run_sawtooth() 
+		actions = self.mockpico.get_actions()  
+
+		t0 = self.get_starting_time(actions)
+		expected_actions = self.construct_expected_log(t0, self.generator.cycles, self.generator.steps, self.generator.trough, expected_cycle_time, expected_step_time, expected_intensity_step)		
+
+		for index in range(len(actions)):
+			# removed time check as ideal case hard to maintain
+			self.assertEqual(actions[index][1], expected_actions[index][1])
+			if len(actions[index]) > 2:
+				self.assertEqual(actions[index][2], expected_actions[index][2])
+
+
 
 
 if __name__ == "__main__":
