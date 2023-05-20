@@ -5,85 +5,184 @@ This example script shows how to control the pico to produce a
 sawtooth output
 '''
 
-import os
-import json
 import datetime as dt
+import json
+import sys
+import os
+
 from g2vpico import G2VPico
 
-PICO_ID = "00000000c2ca735f"
+PICO_ID 				= "00000000c2ca735f"
 
-PICO_IP_ADDRESS = "192.168.1.69"
+PICO_IP_ADDRESS 		= "192.168.1.69"
 
-WAVEFORM_PERIOD_SEC     = 5
-WAVEFORM_CYCLES         = 5         # number of cycles to perform
-WAVEFORM_STEPS          = 10        # number of steps per cycle
+class ParameterError(Exception):
+	''' Exception for parameter errors in the pico function '''
 
-WAVEFORM_MIN_STEP       = 0.25      # minimum dwell time, seconds
+	def __init__(self, message):
+		self.message = message
+		super().__init__(self.message)
 
-WAVEFORM_MIN            = 60        # trough of waveform
-WAVEFORM_MAX            = 90        # peak of waveform
+	def __str__(self):
+		return f"ParameterError: {self.message}"
 
-def sawtooth(pico):
-	''' function to run a sawtooth output on pico '''
 
-	# calculate size of time step in seconds
-	timestep = WAVEFORM_PERIOD_SEC/WAVEFORM_STEPS
-	if timestep < WAVEFORM_MIN_STEP:
-		timestep = WAVEFORM_MIN_STEP
+class SawtoothWaveform():
+	''' class to run a sawtooth on a pico '''
 
-	# calculate intensity rise per timestep
-	delta_intensity = (WAVEFORM_MAX - WAVEFORM_MIN)/(WAVEFORM_STEPS)
+	def __init__(self, picoobj):
 
-	# turn on pico, set starting intensity
-	pico.turn_on()
-	print("Setting Pico global intensity to WAVEFORM_MIN: {0}".format(str(WAVEFORM_MIN)))
-	pico.set_global_intensity(WAVEFORM_MIN)
+		self._waveform_minimum_step = 0.25	# minimum dwell time
 
-	t0 = dt.datetime.now()
+		self._period = None
+		self._cycles = None
+		self._steps = None
+		self._peak = None
+		self._trough = None
+		self._verboseFlag = False
 
-	verboseFlag = True
+		self._timestep = None
+		self._intensitystep = None
 
-	try:
-		# setup variables to track the loop
-		cycle_count = 1
-		step_count = 0
-		time_next_action = t0 + dt.timedelta(seconds=timestep)		# set time to take next action
+		self.use_hardware = True
 
-		# main loop code to change pico output
-		while True:
-			if (dt.datetime.now() >= time_next_action):
-				# update time for next action
-				time_next_action = time_next_action + dt.timedelta(seconds=timestep)
+		self.pico = picoobj
+		
+	@property
+	def period(self):
+		return self._period
 
-				if step_count > WAVEFORM_STEPS:
-					cycle_count = cycle_count + 1
-					if cycle_count > WAVEFORM_CYCLES:
-						break
-					step_count = 0
-				else:
-					step_count = step_count + 1
+	@period.setter
+	def period(self, value):
+		if not isinstance(value, float):
+			raise ValueError("Period must be a float.")
+		if value <= 0:
+			raise ValueError("Period must be greater than zero.")
+		self._period = value
+		
+	@property
+	def cycles(self):
+		return self._cycles
 
-				next_intensity = WAVEFORM_MIN + step_count*delta_intensity
-				pico.set_global_intensity(next_intensity)
+	@cycles.setter
+	def cycles(self, value):
+		if not isinstance(value, int):
+			raise ValueError("Cycles must be an integer.")
+		if value <= 0:
+			raise ValueError("Cycles must be greater than zero.")
+		self._cycles = value
 
-				if verboseFlag:
-					print("Time: {0} Cycle: {1} Step: {2} Next Intensity {3}".format(str(dt.datetime.now()), int(cycle_count), int(step_count), float(next_intensity)))
+	@property
+	def steps(self):
+		return self._steps
 
-	except KeyboardInterrupt:
-		print("Exiting script")
-	except Exception as e:
-		print("Unknown exception occurred - {e}".format(e=e))
-	finally:
-		print("Turning off the Pico")
-		pico.turn_off()
-		pico.clear_channels()
+	@steps.setter
+	def steps(self, value):
+		if not isinstance(value, int):
+			raise ValueError("Steps must be an integer.")
+		if value <= 0:
+			raise ValueError("Steps must be greater than zero.")
+		self._steps = value
 
-def main():
-	## Create an instance of the G2VPico
+	@property
+	def peak(self):
+		return self._peak
+
+	@peak.setter
+	def peak(self, value):
+		if not isinstance(value, float):
+			raise ValueError("Peak must be a float.")
+		if value < 0 or value > 100:
+			raise ValueError("Peak must be between 0 and 100.")
+		if self._trough is not None and value <= self._trough:
+			raise ValueError("Peak must be greater than trough.")
+		self._peak = value
+
+	@property
+	def trough(self):
+		return self._trough
+
+	@trough.setter
+	def trough(self, value):
+		if not isinstance(value, float):
+			raise ValueError("Trough must be a float.")
+		if value < 0 or value > 100:
+			raise ValueError("Trough must be between 0 and 100.")
+		if self._peak is not None and value >= self._peak:
+			raise ValueError("Trough must be less than peak.")
+		self._trough = value
+
+	def calculate_timestep(self):
+		''' method to calculate timestep '''
+		if self._steps is None or self._period is None:
+			raise ValueError("Cannot calculate timestep. _steps or _period is not defined.")
+
+		timestep = self._period / self._steps
+		self._timestep = max(timestep, self._waveform_minimum_step)
+
+		if self._timestep == self._waveform_minimum_step:
+			sys.stdout.write("Warning: The minimum waveform step is being used as the timestep.\n")
+
+	def calculate_intensitystep(self):
+		if self._steps is None or self._peak is None or self._trough is None:
+			raise ValueError("Cannot calculate intensity step. _steps, _peak, or _trough is not defined.")
+
+		intensity_range = self._peak - self._trough
+		self._intensitystep = intensity_range / self._steps
+
+	def run_sawtooth(self):
+		if self._period is None or self._steps is None or self._peak is None or self._trough is None:
+			raise ValueError("Cannot run sawtooth. One or more attributes are not defined.")
+
+		# make sure parameters are up to date
+		self.calculate_timestep()
+		self.calculate_intensitystep()
+
+		if self.use_hardware:
+			self.pico.turn_on()
+			print(f"Setting Pico global intensity to {self._trough}")
+			self.pico.set_global_intensity(self._trough)
+		else:
+			print(f"Setting Virtual Pico global intensity to {self._trough}")
+
+		t0 = dt.datetime.now()
+
+		try:
+			cycle_count = 1
+			step_count = 0
+			time_next_action = t0 + dt.timedelta(seconds=self._timestep)
+
+			while True:
+				if dt.datetime.now() >= time_next_action:
+					time_next_action = time_next_action + dt.timedelta(seconds=self._timestep)
+
+					if step_count > self._steps:
+						cycle_count = cycle_count + 1
+						if cycle_count > self._cycles:
+							break
+						step_count = 0
+					else:
+						step_count = step_count + 1
+
+					next_intensity = self._trough + step_count * self._intensitystep
+					self.pico.set_global_intensity(next_intensity)
+
+					if self._verboseFlag:
+						print(f"Time: {dt.datetime.now()} Cycle: {cycle_count} Step: {step_count} Next Intensity: {next_intensity}")
+
+		except KeyboardInterrupt:
+			print("Exiting script")
+		except Exception as e:
+			print(f"Unknown exception occurred - {e}")
+		finally:
+			print("Turning off the Pico")
+			self.pico.turn_off()
+			self.pico.clear_channels()
+
+if __name__=="__main__":
+
+	# create a pico object, make sure it is turned off
 	pico = G2VPico(PICO_IP_ADDRESS, PICO_ID)
-
-	print(str(pico))
-
 	pico.turn_off()
 
 	if os.path.isfile("test_spectrum.json") is False:
@@ -95,10 +194,11 @@ def main():
 
 		print("Setting Pico to use test spectrum")
 		pico.set_spectrum(new_spectrum)
-		
-		sawtooth(pico)
-		
-  
 
-if __name__=="__main__":
-	main()
+		waveformgenerator = SawtoothWaveform(pico)		# create sawtooth generator with pico object
+		waveformgenerator.period = 5 					# period of waveform in seconds 		
+		waveformgenerator.cycles = 5 					# number of cycles to perform
+		waveformgenerator.trough = 60 					# trough of waveform, in % global intensity
+		waveformgenerator.peak = 90 					# peak of waveform, in % global intensity
+
+		waveformgenerator.run_sawtooth()
