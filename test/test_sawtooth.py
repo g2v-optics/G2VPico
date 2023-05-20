@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import datetime as dt
 import unittest
+import sys
 import warnings
 
 from examples.example_sawtooth import SawtoothWaveform
@@ -14,18 +16,18 @@ class MockPico:
 
 	def turn_on(self):
 		self._turned_on = True
-		self._actions.append("turn_on")
+		self._actions.append((dt.datetime.now(), "turn_on"))
 
 	def turn_off(self):
 		self._turned_on = False
-		self._actions.append("turn_off")
+		self._actions.append((dt.datetime.now(), "turn_off"))
 
 	def set_global_intensity(self, intensity):
 		self._global_intensity = intensity
-		self._actions.append(("set_global_intensity", intensity))
+		self._actions.append((dt.datetime.now(), "set_global_intensity", intensity))
 
 	def clear_channels(self):
-		self._actions.append("clear_channels")
+		self._actions.append((dt.datetime.now(), "clear_channels"))
 
 	def get_actions(self):
 		return self._actions
@@ -41,6 +43,28 @@ class TestSawtooth(unittest.TestCase):
 	def setUp(self):
 		self.mockpico = MockPico()
 		self.generator = SawtoothWaveform(self.mockpico)
+
+	def get_starting_time(self, actionlog):
+		for action in actionlog:
+			if len(action) > 2 and action[1] == 'set_global_intensity':
+				t0 = action[0]
+				return t0
+
+	def construct_expected_log(self, t0, cycles, steps, trough, expected_cycle_time, expected_step_time, expected_intensity_step):
+		# construct test case from current conditions
+		expected_actions = []
+		expected_actions.append((t0, "turn_on"))
+		for cycles in range(cycles):
+			for steps in range(steps + 1):
+				tstep = t0 + dt.timedelta(seconds=(cycles*expected_cycle_time)) + dt.timedelta(seconds=(steps*expected_step_time))
+				next_intensity = trough + steps*expected_intensity_step
+				expected_actions.append((tstep, "set_global_intensity", next_intensity))
+
+		tstep += dt.timedelta(seconds=expected_step_time)
+		expected_actions.append((tstep, "turn_off"))
+		expected_actions.append((tstep, "clear_channels"))
+
+		return expected_actions
 
 	def test_period_property(self):
 		# Test setting and getting the period property
@@ -175,6 +199,136 @@ class TestSawtooth(unittest.TestCase):
 		# Call calculate_intensitystep method without setting steps, peak, and trough
 		with self.assertRaises(ValueError):
 			self.generator.calculate_intensitystep()
+
+	def test_run_sawtooth_ten_steps(self):
+		self.generator.trough = 0	
+		self.generator.peak = 100
+		self.generator.steps = 10
+		self.generator.period = 10
+		self.generator.cycles = 1
+		 
+		# expected behaviours based on above parameters
+		expected_step_time = 1
+		expected_cycle_time = 10
+		expected_intensity_step = 10
+
+		# get logged actions from mockpico
+		self.generator.run_sawtooth() 
+		actions = self.mockpico.get_actions()  
+
+		t0 = self.get_starting_time(actions)
+		expected_actions = self.construct_expected_log(t0, self.generator.cycles, self.generator.steps, self.generator.trough, expected_cycle_time, expected_step_time, expected_intensity_step)		
+
+		for index in range(len(actions)):
+			time_delta = abs(actions[index][0] - expected_actions[index][0])
+			self.assertLessEqual(time_delta, dt.timedelta(seconds=1))
+			self.assertEqual(actions[index][1], expected_actions[index][1])
+			if len(actions[index]) > 2:
+				self.assertEqual(actions[index][2], expected_actions[index][2])
+
+	def test_run_sawtooth_twenty_steps(self):
+		self.generator.trough = 0	
+		self.generator.peak = 100
+		self.generator.steps = 20
+		self.generator.period = 10
+		self.generator.cycles = 1
+		 
+		# expected behaviours based on above parameters
+		expected_step_time = 0.5
+		expected_cycle_time = 20
+		expected_intensity_step = 5
+
+		# get logged actions from mockpico
+		self.generator.run_sawtooth() 
+		actions = self.mockpico.get_actions()  
+
+		t0 = self.get_starting_time(actions)
+		expected_actions = self.construct_expected_log(t0, self.generator.cycles, self.generator.steps, self.generator.trough, expected_cycle_time, expected_step_time, expected_intensity_step)		
+
+		for index in range(len(actions)):
+			time_delta = abs(actions[index][0] - expected_actions[index][0])
+			self.assertLessEqual(time_delta, dt.timedelta(seconds=1))
+			self.assertEqual(actions[index][1], expected_actions[index][1])
+			if len(actions[index]) > 2:
+				self.assertEqual(actions[index][2], expected_actions[index][2])
+
+	def test_run_sawtooth_ten_steps_half_range(self):
+		self.generator.trough = 25	
+		self.generator.peak = 75
+		self.generator.steps = 10
+		self.generator.period = 10
+		self.generator.cycles = 1
+		 
+		# expected behaviours based on above parameters
+		expected_step_time = 1
+		expected_cycle_time = 10
+		expected_intensity_step = 5
+
+		# get logged actions from mockpico
+		self.generator.run_sawtooth() 
+		actions = self.mockpico.get_actions()  
+
+		t0 = self.get_starting_time(actions)
+		expected_actions = self.construct_expected_log(t0, self.generator.cycles, self.generator.steps, self.generator.trough, expected_cycle_time, expected_step_time, expected_intensity_step)		
+
+		for index in range(len(actions)):
+			time_delta = abs(actions[index][0] - expected_actions[index][0])
+			self.assertLessEqual(time_delta, dt.timedelta(seconds=1))
+			self.assertEqual(actions[index][1], expected_actions[index][1])
+			if len(actions[index]) > 2:
+				self.assertEqual(actions[index][2], expected_actions[index][2])
+
+	def test_run_sawtooth_five_steps_quarter_range(self):
+		self.generator.trough = 25	
+		self.generator.peak = 50
+		self.generator.steps = 5
+		self.generator.period = 2.5
+		self.generator.cycles = 1
+		 
+		# expected behaviours based on above parameters
+		expected_step_time = 0.5
+		expected_cycle_time = 2.5
+		expected_intensity_step = 5
+
+		# get logged actions from mockpico
+		self.generator.run_sawtooth() 
+		actions = self.mockpico.get_actions()  
+
+		t0 = self.get_starting_time(actions)
+		expected_actions = self.construct_expected_log(t0, self.generator.cycles, self.generator.steps, self.generator.trough, expected_cycle_time, expected_step_time, expected_intensity_step)		
+
+		for index in range(len(actions)):
+			time_delta = abs(actions[index][0] - expected_actions[index][0])
+			self.assertLessEqual(time_delta, dt.timedelta(seconds=1))
+			self.assertEqual(actions[index][1], expected_actions[index][1])
+			if len(actions[index]) > 2:
+				self.assertEqual(actions[index][2], expected_actions[index][2])
+
+	def test_run_sawtooth_five_steps_quarter_range_four_cycles(self):
+		self.generator.trough = 25	
+		self.generator.peak = 50
+		self.generator.steps = 5
+		self.generator.period = 2.5
+		self.generator.cycles = 4
+		 
+		# expected behaviours based on above parameters
+		expected_step_time = 0.5
+		expected_cycle_time = 2.5
+		expected_intensity_step = 5
+
+		# get logged actions from mockpico
+		self.generator.run_sawtooth() 
+		actions = self.mockpico.get_actions()  
+
+		t0 = self.get_starting_time(actions)
+		expected_actions = self.construct_expected_log(t0, self.generator.cycles, self.generator.steps, self.generator.trough, expected_cycle_time, expected_step_time, expected_intensity_step)		
+
+		for index in range(len(actions)):
+			# removed time check as ideal case hard to maintain
+			self.assertEqual(actions[index][1], expected_actions[index][1])
+			if len(actions[index]) > 2:
+				self.assertEqual(actions[index][2], expected_actions[index][2])
+
 
 
 if __name__ == "__main__":

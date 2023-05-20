@@ -18,6 +18,9 @@ PICO_IP_ADDRESS 		= "192.168.1.69"
 class TimestepWarning(UserWarning):
 	pass
 
+class IntensityWarning(UserWarning):
+	pass
+
 class SawtoothWaveform():
 	''' class to run a sawtooth on a pico '''
 
@@ -114,6 +117,10 @@ class SawtoothWaveform():
 			raise ValueError("Trough must be less than peak.")
 		self._trough = value
 
+	@property
+	def timestep(self):
+		return self._timestep
+	
 	def calculate_timestep(self):
 		''' method to calculate timestep '''
 		if self._steps is None or self._period is None:
@@ -140,7 +147,6 @@ class SawtoothWaveform():
 		self.calculate_timestep()
 		self.calculate_intensitystep()
 
-		
 		self.pico.turn_on()
 		self.pico.set_global_intensity(self._trough)
 		if self.verboseFlag: 
@@ -149,14 +155,13 @@ class SawtoothWaveform():
 		t0 = dt.datetime.now()
 
 		try:
-			
 			time_next_action = t0 + dt.timedelta(seconds=self._timestep)
 
 			while True:
 				if dt.datetime.now() >= time_next_action:
 					time_next_action = time_next_action + dt.timedelta(seconds=self._timestep)
 
-					if self.step_count > self._steps:
+					if self.step_count > (self._steps - 1):
 						self.cycle_count += 1
 						if self.cycle_count > self._cycles:
 							break
@@ -165,17 +170,19 @@ class SawtoothWaveform():
 						self.step_count += 1
 
 					next_intensity = self._trough + self.step_count * self._intensitystep
+					if next_intensity > 100:
+						warnings.warn("Sawtooth tried to write global intensity above 100.", IntensityWarning)
+						next_intensity = 100
 
 					self.pico.set_global_intensity(next_intensity)
 					if self.verboseFlag:
 						print(f"Time: {dt.datetime.now()} Cycle: {self.cycle_count} Step: {self.step_count} Next Intensity: {next_intensity}")
 
 		except KeyboardInterrupt:
-			print("Exiting script")
+			print("Keyboard Interrupt Caught - Exiting script")
 		except Exception as e:
 			print(f"Unknown exception occurred - {e}")
 		finally:
-			print("Turning off the Pico")
 			self.pico.turn_off()
 			self.pico.clear_channels()
 
