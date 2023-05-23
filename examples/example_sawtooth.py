@@ -206,6 +206,7 @@ if __name__=="__main__":
 		waveformgenerator = SawtoothWaveform(pico)		# create sawtooth generator with pico object
 		waveformgenerator.period = 5 					# period of waveform in seconds 		
 		waveformgenerator.cycles = 5 					# number of cycles to perform
+		waveformgenerator.steps = 5						# number of steps per cycle 
 		waveformgenerator.trough = 60 					# trough of waveform, in % global intensity
 		waveformgenerator.peak = 90 					# peak of waveform, in % global intensity
 
