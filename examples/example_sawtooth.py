@@ -7,6 +7,7 @@ sawtooth output
 
 import datetime as dt
 import json
+import sys
 import warnings
 import os
 
@@ -209,7 +210,7 @@ class SawtoothWaveform():
 			print(f"Unknown exception occurred - {e}")
 		finally:
 			if self.verboseFlag:
-				print(f"Setting Pico to zero spectrum")
+				print("Setting Pico to zero spectrum")
 			self.pico.turn_off()
 			self.pico.clear_channels()
 
