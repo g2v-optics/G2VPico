@@ -37,7 +37,7 @@ class SawtoothWaveform():
 		self._timestep = None
 		self._intensitystep = None
 
-		self.verboseFlag = False
+		self._verboseFlag = False
 
 		self.cycle_count = 1
 		self.step_count = 0
@@ -120,6 +120,17 @@ class SawtoothWaveform():
 	@property
 	def timestep(self):
 		return self._timestep
+
+	@property
+	def verboseFlag(self):
+		return self._verboseFlag
+
+	@verboseFlag.setter
+	def verboseFlag(self, value):
+		if isinstance(value, bool):
+			self._verboseFlag = value
+		else:
+			raise ValueError("verboseFlag must be a boolean value.")
 	
 	def calculate_timestep(self):
 		''' method to calculate timestep '''
@@ -162,6 +173,8 @@ class SawtoothWaveform():
 					time_next_action = time_next_action + dt.timedelta(seconds=self._timestep)
 
 					if self.step_count > (self._steps - 1):
+						if self.verboseFlag:
+							print(f"Cycle {self.cycle_count} completed")
 						self.cycle_count += 1
 						if self.cycle_count > self._cycles:
 							break
@@ -183,6 +196,8 @@ class SawtoothWaveform():
 		except Exception as e:
 			print(f"Unknown exception occurred - {e}")
 		finally:
+			if self.verboseFlag:
+				print(f"Setting Pico to zero spectrum")
 			self.pico.turn_off()
 			self.pico.clear_channels()
 
@@ -194,7 +209,7 @@ if __name__=="__main__":
 	pico.clear_channels()
 
 	if os.path.isfile("test_spectrum.json") is False:
-		print("ERROR: Could not fine test_spectrum.json file")
+		print("ERROR: Could not find test_spectrum.json file")
 		print("Exiting script")
 	else:
 		with open("test_spectrum.json", 'r') as infile:
@@ -204,6 +219,9 @@ if __name__=="__main__":
 		pico.set_spectrum(new_spectrum)
 
 		waveformgenerator = SawtoothWaveform(pico)		# create sawtooth generator with pico object
+		waveformgenerator.verboseFlag = True
+
+		# Adjust these paramters to change waveform
 		waveformgenerator.period = 5 					# period of waveform in seconds 		
 		waveformgenerator.cycles = 5 					# number of cycles to perform
 		waveformgenerator.steps = 5						# number of steps per cycle 
@@ -211,3 +229,5 @@ if __name__=="__main__":
 		waveformgenerator.peak = 90 					# peak of waveform, in % global intensity
 
 		waveformgenerator.run_sawtooth()
+
+	sys.exit(0)

@@ -200,6 +200,20 @@ class TestSawtooth(unittest.TestCase):
 		with self.assertRaises(ValueError):
 			self.generator.calculate_intensitystep()
 
+	def test_verbose_flag_default_value(self):
+		self.assertFalse(self.generator.verboseFlag)
+
+	def test_verbose_flag_setter_valid_input(self):
+		self.generator.verboseFlag = True
+		self.assertTrue(self.generator.verboseFlag)
+
+		self.generator.verboseFlag = False
+		self.assertFalse(self.generator.verboseFlag)
+
+	def test_verbose_flag_setter_invalid_input(self):
+		with self.assertRaises(ValueError):
+			self.generator.verboseFlag = "invalid"
+
 	def test_run_sawtooth_ten_steps(self):
 		self.generator.trough = 0	
 		self.generator.peak = 100
