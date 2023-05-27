@@ -149,6 +149,24 @@ class TestSawtooth(unittest.TestCase):
 		with self.assertRaises(ValueError):
 			self.generator.trough = -10
 	
+	def test_calculate_intensitystep_undefined_steps(self):
+		with self.assertRaises(ValueError) as cm:
+			self.generator.calculate_intensitystep()
+		self.assertEqual(str(cm.exception), "Cannot calculate intensity step as number of steps is not defined.")
+
+	def test_calculate_intensitystep_undefined_peak(self):
+		self.generator._steps = 10
+		with self.assertRaises(ValueError) as cm:
+			self.generator.calculate_intensitystep()
+		self.assertEqual(str(cm.exception), "Cannot calculate intensity step as waveform peak is not defined.")
+
+	def test_calculate_intensitystep_undefined_trough(self):
+		self.generator._steps = 10
+		self.generator._peak = 100
+		with self.assertRaises(ValueError) as cm:
+			self.generator.calculate_intensitystep()
+		self.assertEqual(str(cm.exception), "Cannot calculate intensity step as waveform trough is not defined.")
+
 	def test_calculate_timestep(self):
 		# Set steps and period
 		self.generator.steps = 10
@@ -160,10 +178,16 @@ class TestSawtooth(unittest.TestCase):
 		# Check that timestep is calculated correctly
 		self.assertEqual(self.generator._timestep, 1.00)
 
-	def test_calculate_timestep_undefined_properties(self):
-		# Call calculate_timestep method without setting steps and period
-		with self.assertRaises(ValueError):
+	def test_calculate_timestep_undefined_steps(self):
+		with self.assertRaises(ValueError) as cm:
 			self.generator.calculate_timestep()
+		self.assertEqual(str(cm.exception), "Cannot calculate timestep as number of steps is not defined.")
+
+	def test_calculate_timestep_undefined_period(self):
+		self.generator._steps = 10
+		with self.assertRaises(ValueError) as cm:
+			self.generator.calculate_timestep()
+		self.assertEqual(str(cm.exception), "Cannot calculate timestep as period is not defined.")
 
 	def test_calculate_timestep_warning(self):
 		# Set steps and period
@@ -213,6 +237,32 @@ class TestSawtooth(unittest.TestCase):
 	def test_verbose_flag_setter_invalid_input(self):
 		with self.assertRaises(ValueError):
 			self.generator.verboseFlag = "invalid"
+
+	def test_run_sawtooth_undefined_steps(self):
+		with self.assertRaises(ValueError) as cm:
+			self.generator.run_sawtooth()
+		self.assertEqual(str(cm.exception), "Cannot run sawtooth waveform as number of steps is not defined.")
+
+	def test_run_sawtooth_undefined_peak(self):
+		self.generator._steps = 10
+		with self.assertRaises(ValueError) as cm:
+			self.generator.run_sawtooth()
+		self.assertEqual(str(cm.exception), "Cannot run sawtooth waveform as waveform peak is not defined.")
+
+	def test_run_sawtooth_undefined_trough(self):
+		self.generator._steps = 10
+		self.generator._peak = 100
+		with self.assertRaises(ValueError) as cm:
+			self.generator.run_sawtooth()
+		self.assertEqual(str(cm.exception), "Cannot run sawtooth waveform as waveform trough is not defined.")
+
+	def test_run_sawtooth_undefined_period(self):
+		self.generator._steps = 10
+		self.generator._peak = 100
+		self.generator._trough = 0
+		with self.assertRaises(ValueError) as cm:
+			self.generator.run_sawtooth()
+		self.assertEqual(str(cm.exception), "Cannot run sawtooth waveform as waveform period is not defined.")
 
 	def test_run_sawtooth_ten_steps(self):
 		self.generator.trough = 0	

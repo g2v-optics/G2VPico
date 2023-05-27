@@ -134,8 +134,10 @@ class SawtoothWaveform():
 	
 	def calculate_timestep(self):
 		''' method to calculate timestep '''
-		if self._steps is None or self._period is None:
-			raise ValueError("Cannot calculate timestep. _steps or _period is not defined.")
+		if self._steps is None:
+			raise ValueError("Cannot calculate timestep as number of steps is not defined.")
+		if self._period is None:
+			raise ValueError("Cannot calculate timestep as period is not defined.")
 
 		timestep = self._period / self._steps
 		self._timestep = max(timestep, self._waveform_minimum_step)
@@ -144,15 +146,25 @@ class SawtoothWaveform():
 			warnings.warn("The minimum waveform step is being used as the timestep.", TimestepWarning)
 
 	def calculate_intensitystep(self):
-		if self._steps is None or self._peak is None or self._trough is None:
-			raise ValueError("Cannot calculate intensity step. _steps, _peak, or _trough is not defined.")
+		if self._steps is None:
+			raise ValueError("Cannot calculate intensity step as number of steps is not defined.")
+		if self._peak is None:
+			raise ValueError("Cannot calculate intensity step as waveform peak is not defined.")
+		if self._trough is None:
+			raise ValueError("Cannot calculate intensity step as waveform trough is not defined.")
 
 		intensity_range = self._peak - self._trough
 		self._intensitystep = intensity_range / self._steps
 
 	def run_sawtooth(self):
-		if self._period is None or self._steps is None or self._peak is None or self._trough is None:
-			raise ValueError("Cannot run sawtooth. One or more attributes are not defined.")
+		if self._steps is None:
+			raise ValueError("Cannot run sawtooth waveform as number of steps is not defined.")
+		if self._peak is None:
+			raise ValueError("Cannot run sawtooth waveform as waveform peak is not defined.")
+		if self._trough is None:
+			raise ValueError("Cannot run sawtooth waveform as waveform trough is not defined.")
+		if self._period is None:
+			raise ValueError("Cannot run sawtooth waveform as waveform period is not defined.")
 
 		# make sure parameters are up to date
 		self.calculate_timestep()
