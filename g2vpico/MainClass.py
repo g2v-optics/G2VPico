@@ -1,5 +1,5 @@
 '''
-Copyright 2021 G2V Optics
+Copyright 2021 - 2023 G2V Optics
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
