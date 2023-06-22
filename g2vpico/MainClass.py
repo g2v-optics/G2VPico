@@ -23,12 +23,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 '''
 
-import sys
-import platform
-import os
-import time
-import datetime as dt
-from datetime import timedelta
 import traceback
 import socket
 import json
@@ -60,7 +54,7 @@ class G2VPico():
             init_success = False
 
         if not init_success:
-            raise ConnectionRefusedError("Connection to PICO at {ip} refused".format(ip=ip_address))
+            raise ConnectionRefusedError(f"Connection to PICO at {ip_address} refused")
 
         self._channel_count = self.__get_channel_count()
         self._channel_list = self.__get_channel_list()
@@ -69,7 +63,7 @@ class G2VPico():
             raise Exception("Instance can not be initialized")
 
     def __repr__(self):
-        return "PICO {m} at {ip}".format(m=self._id, ip=self._ip_address)   
+        return f"PICO {self._id} at {self._ip_address}"   
 
     def __dir__(self):
         restricted_list = []
@@ -83,8 +77,6 @@ class G2VPico():
         restricted_list.append("get_channel_limit")
         restricted_list.append("get_spectrum")
         restricted_list.append("set_spectrum")
-        # restricted_list.append("get_linear_coefficient")
-        # restricted_list.append("get_quadratic_coefficient")
         restricted_list.append("get_channel_wavelength_range")
         restricted_list.append("get_global_intensity")
         restricted_list.append("set_global_intensity")
@@ -120,21 +112,21 @@ class G2VPico():
     def __error_handler(self, error, command):
         if "Pico ID invalid" in error:
             raise RuntimeError("Pico ID is invalid")
-        elif "Command type invalid" in error:
-            raise NotImplementedError("Command {c} is not implemented".format(c=command))
-        elif "Pico is not Variable" in error:
+        if "Command type invalid" in error:
+            raise NotImplementedError(f"Command {command} is not implemented")
+        if "Pico is not Variable" in error:
             raise RuntimeError("Operation not allowed in Fixed Picos")
-        elif "Pico API not enabled" in error:
+        if "Pico API not enabled" in error:
             raise RuntimeError("Pico API not enabled")
-        else:
-            raise Exception("Unknown error occurred: {e}".format(e=error))
+        
+        raise Exception(f"Unknown error occurred: {error}")
 
     def __send_cmd(self, cmd):
 
         try:
             self._socket.sendall(json.dumps(cmd).encode('utf-8'))
         except Exception as e:
-            print("Failed to send cmd {cmd} - {e} - {tb}".format(cmd=cmd, e=e, tb=traceback.format_exc()))
+            print(f"Failed to send cmd {cmd} - {e} - {traceback.format_exc()}")
             return None
 
         data = self._socket.recv(1024)
@@ -191,18 +183,14 @@ class G2VPico():
         '''Internal method for verifying that a channel is valid and converting to int'''
         try:
             channel = int(channel)
-        except:
-            raise ValueError("Channel type of {t} is invalid".format(t=type(channel)))
+        except Exception as exc:
+            raise ValueError(f"Channel type of {channel} is invalid") from exc
 
         if channel not in self._channel_list:
-            raise ValueError("A channel value of {s} is invalid".format(s=channel))
+            raise ValueError(f"A channel value of {channel} is invalid")
 
         return channel
 
-
-    '''
-     Public Methods
-    ''' 
 
     def get_channel_value(self, channel):
         '''
@@ -281,8 +269,8 @@ class G2VPico():
 
         try:
             value = int(value)
-        except:
-            raise ValueError("Value type of {t} is invalid".format(t=type(value)))
+        except Exception as exc:
+            raise ValueError(f"Value type of {value} is invalid") from exc
 
         cmd = {}
         cmd['command'] = 'api'
@@ -426,7 +414,7 @@ class G2VPico():
             Raised when the channel is not in the range [0, channel_count]
         '''
         spectrum_list = []
-        if type(channel_list) == type(""):
+        if isinstance(channel_list, str):
             load_good = True
             try:
                 spectrum_list = json.loads(channel_list)
@@ -436,17 +424,17 @@ class G2VPico():
             if not load_good:
                 raise ValueError("Spectrum data could not be loaded")
 
-        elif type(channel_list) == type([]):
+        elif isinstance(channel_list, list):
             spectrum_list = channel_list
         else:
-            raise ValueError("Spectrum data of type {t} is invalid".format(t=type(channel_list)))
+            raise ValueError(f"Spectrum data of type {channel_list} is invalid")
 
         for item in spectrum_list:
             channel = item.get('channel', None)
             value = item.get('value', None)
 
             result_array = {}
-            if channel and value:
+            if channel and (value or value == 0):
                 result_array[channel] = self.set_channel_value(channel=channel, value=value)
 
         return True
@@ -653,4 +641,3 @@ class G2VPico():
             if new_cmd == cmd['cmd']:
                 return response.get('fixture_on', None)
         return None
-
