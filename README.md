@@ -9,6 +9,13 @@ pip install git+https://git@github.com/g2v-optics/G2VPico.git@main
 Example scripts are available in the _examples_ directory.  
 Please note that the _examples_ directory will not be installed with the setup but can be downloaded through GitHub.
 
+## Required Equipment Before Starting
+
+To make use of this capability, you must have the following equipment:
+1. A G2V Pico Solar Simulator
+2. A computer with a python environment installed (https://www.python.org/)
+2. An ethernet connection between your computer and the G2V Pico
+
 ## Required Information Before Starting
 
 The Python API requires two pieces of information in order to create a Pico object: 
